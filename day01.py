@@ -4,22 +4,65 @@ dirs = [(0,1),(1,0),(0,-1),(-1,0)]
 
 inp = input.split(", ")
 
-x = 0
-y = 0
-
-dir = 0
-
-for i in inp:
-    if i[0] == "R":
+def advance (dir, instr):
+    if instr[0] == "R":
         dir += 1
     else:
         dir -= 1
     dir %= 4
-    val = int(i[1])
-    x += dirs[dir][0] * val
-    y += dirs[dir][1] * val
+    val = int(instr[1:])
+    x = dirs[dir][0] * val
+    y = dirs[dir][1] * val
+    return (dir, x,y)
 
-print x+y
+
+def part1():
+    x = 0
+    y = 0
+
+    dir = 0
+
+    for i in inp:
+        (dir, dx, dy) = advance(dir, i)
+        x += dx
+        y += dy
+
+    print x, y, abs(x)+abs(y)
+
+def part2():
+    x=0
+    y=0
+    dir = 0
+    grid = [[0]*1000 for i in range(1000)]
+    for i in inp:
+        if i[0] == "R":
+            dir += 1
+        else:
+            dir -= 1
+        dir %= 4
+        val = int(i[1:])
+        dx,dy = dirs[dir]
+        cont = 0
+
+        for j in range(val):
+            if grid[x+500][y+500] == 1:
+                break
+            else:
+                grid[x+500][y+500] = 1
+                x += dx
+                y += dy
+        else:
+            cont = 1
+
+        if cont == 0: break
+
+
+    print x, y, abs(x)+abs(y)
+
+
+if __name__ == "__main__":
+    part1()
+    part2()
 
 
 
