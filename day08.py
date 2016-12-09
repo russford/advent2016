@@ -1,17 +1,17 @@
 
 
 class Grid (object):
-    grid = [[0]*50 for i in range(6)]
+    def __init__ (self, sx, sy):
+        self.grid = [[0]*sx for i in range(sy)]
 
-    def rotate_row(self, row, move):
-        self.grid[row] = self.grid[-move:] + self.grid[:-move]
-        pass
-
-    def rotate_col(self, col, move):
-        self.grid = zip(*self.grid)
-        rotate_row(self, col, move)
-        self.grid = zip(*self.grid)
-        pass
+    def rotate(self, col, num, move):
+        if col:
+            sz = len(self.grid)
+            col_list = [self.grid[(i-move)%sz][num] for i in range(sz)]
+            for i in range(sz):
+                self.grid[i][num] = col_list[i]
+        else:
+            self.grid[num] = self.grid[num][-move:] + self.grid[num][:-move]
 
     def rect(self, row, col):
         for g in self.grid[:row]:
@@ -21,26 +21,43 @@ class Grid (object):
         return sum(map(sum, self.grid))
 
     def print_grid(self):
-        print ('\n'.join([''.join(["#" if c else " " for c in g]) for g in self.grid]))
+        print ('\n'.join([''.join(["#" if c else "." for c in g]) for g in self.grid]))
 
     def process(self, instr):
         instr = instr.split()
         if instr[0] == "rect":
-            row,col = map(int, instr[1].split("x"))
+            col,row = map(int, instr[1].split("x"))
             self.rect(row,col)
         else:
+            self.rotate(instr[1] == "column", int(instr[2][2:]), int(instr[4]))
 
 
+def test():
+    test_input = ["rect 3x2", "rotate column x=1 by 1", "rotate row y=0 by 4", "rotate column x=1 by 1"]
 
+    g = Grid(7,3)
 
-test_input = ["rect 3x2", "rotate column x=1 by 1", "rotate row y=0 by 4", "rotate column x=1 by 1"]
+    for instr in test_input:
+        print (instr)
+        g.process(instr)
+        g.print_grid()
+        print()
 
-g = Grid()
+    print(g.lights_on())
 
-for instr in test_input:
-    g.process(instr)
-    print (g.lights_on())
+test()
+
+with open("day08.txt", "r") as f:
+    file_input = f.readlines()
+
+g = Grid(50,6)
+for instr in file_input:
+    try:
+        print(instr)
+        g.process(instr)
+        g.print_grid()
+    except:
+        print(instr)
+        raise
 
 print(g.lights_on())
-
-g.print_grid()
