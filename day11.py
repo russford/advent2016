@@ -9,14 +9,18 @@
 # The third floor contains a lithium generator.
 # The fourth floor contains nothing relevant.
 
-import itertools, copy
+import itertools, copy, collections
 
 
 class State(object):
     def __init__(self):
         self.items = {"HM": 1, "LM": 1, "HG": 2, "LG": 3 }
+        print (sorted(self.items.items()))
         self.elevator = 1
         self.chem_set = set([a[0] for a in self.items.keys()])
+
+    def tuple_state(self):
+        return [self.elevator] + [v for k,v in sorted(self.items.items())]
 
     def print_items(self):
         for i in range(4,0,-1):
@@ -45,13 +49,14 @@ class State(object):
         return all([v == 4 for k,v in self.items.items()])
 
     def fetch_states (self):
-        if self.elevator == 4:
-            elevators = [-1]
-        elif self.elevator == 1:
-            elevators = [+1]
-        else:
-            elevators = [+1, -1]
+        elevators = []
+        if self.elevator < 4:
+            elevators += [1]
+        if self.elevator > 1:
+            elevators += [-1]
+
         floor_items = [k for k,v in self.items.items() if v == self.elevator]
+
         poss = list(itertools.combinations(floor_items, 1)) + list(itertools.combinations(floor_items, 2))
         poss = list(itertools.product(elevators, poss))
         return poss
@@ -62,24 +67,35 @@ class State(object):
             self.items[i] = self.elevator
 
 
-seen_states = []
+seen_states = collections.deque()
 
-def run_states(state, depth, seen_states):
-    if depth>15:
+min_depth = 5
+
+def run_states(state, depth):
+    print ("at depth {}: {} | {}".format(depth, state.tuple_state(), seen_states))
+    global min_depth, seen_states
+
+    if depth>min_depth:
         return 0
+    if state.check_fry():
+        return 0
+    if state.check_complete():
+        print ("complete! {}: {}".format(depth, seen_states))
+        if min_depth > depth: min_depth = depth
+
     poss = state.fetch_states()
+
+    #print ("proceeding; {} poss".format(len(poss)))
     for move in poss:
         s = copy.deepcopy(state)
         s.act (move)
-        if s in seen_states:
-            return 0
-        else:
-            seen_states += [s]
-        if s.check_complete():
-            print("complete; depth = {}".format(depth))
-            return 1
-        elif not s.check_fry():
-            run_states(s, depth+1, seen_states)
+
+        if not s.tuple_state() in seen_states:
+            seen_states.append(state.tuple_state())
+            run_states(s, depth+1)
+            seen_states.pop()
 
 s = State()
-print(run_states(s,1, seen_states))
+print(run_states(s,1))
+
+print(seen_states)
