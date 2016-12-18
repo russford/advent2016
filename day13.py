@@ -11,7 +11,7 @@ def gen_maze(w, h, num):
 
 
 def print_maze(maze):
-    print('\n'.join([''.join(["#" if m else "." for m in l]) for l in maze]))
+    print('\n'.join([''.join(["#" if m else " " for m in l]) for l in maze]))
 
 
 def neighbors (p, maze, came_from):
@@ -29,48 +29,46 @@ def neighbors (p, maze, came_from):
     return dirs
 
 
-def check_or_append (n, p, target, q, l, came_from):
-    came_from[p] = (n,l+1)
+def check_or_append(n, p, target, q, l, came_from):
+    came_from[p] = (n, l+1)
     if p[0] == target[0] and p[1] == target[1]:
         return 1
     else:
         q.append((p, l+1))
 
 
-def walk_maze (maze, target):
+def walk_maze(maze, target):
     q = collections.deque()
     came_from = {}
-    q.append (((1,1),0))
+    q.append(((1, 1), 0))
     while q:
         n, l = q.popleft()
         poss = neighbors(n, maze, came_from)
-        print ("at {}: poss = {}".format(n, poss))
+        print("at {}: poss = {}".format(n, poss))
         for p in poss:
-            if not p in came_from.keys():
-                if check_or_append(n, p, target, q, l, came_from):
-                    # print (came_from)
-                    return came_from
+            if check_or_append(n, p, target, q, l, came_from):
+                # print (came_from)
+                return came_from
     return came_from
 
-def check_length (target, paths):
+
+def check_length(target, paths):
     path_len = 0
-    while target != (1,1):
+    while target != (1, 1):
         target = paths[target][0]
         path_len += 1
     return path_len
 
-def solve (w, h, num, target):
+
+def solve(w, h, num, target):
     maze = gen_maze(w, h, num)
     paths = walk_maze(maze, target)
     print_maze(maze)
     return paths
 
-paths = solve (100,100, 1358, (39,31))
+paths = solve(100, 100, 1358, (39, 31))
 
-print(paths[(39,31)][1])
-
-for p in paths.items(): print (p[1][1])
-
-print (sum(map(lambda p:p[1][1]<=50, paths.items())))
+print(paths[(39, 31)][1])
+print(len([v[1] for k, v in paths.items() if v[1] <= 50]))
 
 
