@@ -9,121 +9,74 @@
 # The third floor contains a lithium generator.
 # The fourth floor contains nothing relevant.
 
-import itertools, copy, collections
-
-
-
-class State(object):
-    def __init__(self):
-        self.items = {"HM": 1, "LM": 1, "HG": 2, "LG": 3 }
-        print (sorted(self.items.items()))
-        self.elevator = 1
-        self.chem_set = set([a[0] for a in self.items.keys()])
-
-    def tuple_state(self):
-        return [self.elevator] + [v for k,v in sorted(self.items.items())]
-
-    def print_items(self):
-        for i in range(4,0,-1):
-            str = " ".join([ k if v==i else ". " for k,v in self.items.items()])
-            e_str = "E " if self.elevator == i else "  "
-            print ("L{} {} {}".format(i, e_str, str))
-
-    def check_fry_set (self, floor_items):
-        if not "G" in [g[1] for g in floor_items]:
-            return 0
-        if not "M" in [g[1] for g in floor_items]:
-            return 0
-
-        chips = set([a[0] for a in floor_items if a[1] == "M"])
-        gens = set([a[0] for a in floor_items if a[1] == "G"])
-
-        return any([c not in gens for c in chips]) and any([g not in chips for g in gens])
-
-
-    def check_fry(self):
-        for i in range(4,0,-1):
-            if (self.check_fry_set ([k for k,v in self.items.items() if v == i])):
-                print ("fried")
-                return 1
-
-    def check_complete (self):
-        return all([v == 4 for k,v in self.items.items()])
-
-    def fetch_states (self):
-        elevators = []
-        if self.elevator < 4:
-            elevators += [1]
-        if self.elevator > 1:
-            elevators += [-1]
-
-        floor_items = [k for k,v in self.items.items() if v == self.elevator]
-
-        poss = list(itertools.combinations(floor_items, 1)) + list(itertools.combinations(floor_items, 2))
-        poss = list(itertools.product(elevators, poss))
-        return poss
-
-    def act(self, action):
-        self.elevator += action[0]
-        for i in action[1]:
-            self.items[i] = self.elevator
-
-
-seen_states = collections.deque()
-
-min_depth = 5
-
-def run_states(state, depth):
-    print ("at depth {}: {} | {}".format(depth, state.tuple_state(), seen_states))
-    global min_depth, seen_states
-
-    if depth>min_depth:
-        return 0
-    if state.check_fry():
-        return 0
-    if state.check_complete():
-        print ("complete! {}: {}".format(depth, seen_states))
-        if min_depth > depth: min_depth = depth
-
-    poss = state.fetch_states()
-
-    #print ("proceeding; {} poss".format(len(poss)))
-    for move in poss:
-        s = copy.deepcopy(state)
-        s.act (move)
-
-        if not s.tuple_state() in seen_states:
-            seen_states.append(state.tuple_state())
-            run_states(s, depth+1)
-            seen_states.pop()
-
-# s = State()
-# print(run_states(s,1))
-#
-# print(seen_states)
+import itertools, collections
 
 def check_fried (state):
-    checks = [(state[i], state[i+1]) for i in range(1, len(state), 2) if state[i] != state[i+1]]
-    gens, chips = zip(*checks)
-    return any ([c in gens for c in chips])
+    checks = [(state[i], state[i+1]) for i in range(1, len(state), 2)]
+    if checks:
+        gens, chips = zip(*checks)
+        for i in range(len(chips)):
+            if gens[i] != chips[i] and chips[i] in gens: return 1
+    return 0
+
+def state_add (poss, minus, n):
+    return [1 if i==0 or i in poss else 0 for i in range(n)]
+
+def check_or_append (state, poss, delta, came_from, q):
+
+    s = list(state)
+    s[0] += delta
+    for p in poss:
+        s[p] = s[0]
+    s = tuple(s)
+
+    if s not in came_from and not check_fried(s):
+        q.append(s)
+        came_from[s] = state
+
+        if all([s == 4 for s in state]):
+            print ("\n\nall done\n\n")
+            return 1
 
 
-def fetch_states(state, came_from):
-    elevators = []
-    if state[0] < 4:
-        elevators += [1]
-    if state[0] > 1:
-        elevators += [-1]
+def fetch_states(state, came_from, q):
+    elev = []
+    if state[0] < 4: elev += [1]
+    if state[0] > 1: elev += [-1]
 
     floor_items = [i for i in range(1, len(state)) if state[i] == state[0]]
 
     poss = list(itertools.combinations(floor_items, 1)) + list(itertools.combinations(floor_items, 2))
-    print (poss)
 
-    return poss
+    for e, p in itertools.product(elev, poss):
+        if check_or_append(state, p, e, came_from, q): return 1
 
 
-states = [[2, 3, 2, 2, 1], [3, 2, 3, 3, 1], [4, 2, 2, 4, 1]]
+def walk_elev (state, target):
+    came_from = {}
+    q = collections.deque()
+    q.append(state)
+    while q:
+        s = q.popleft()
+        if fetch_states(s, came_from, q):
+            break
 
-for s in states:
-    print (s, check_fried(s))
+    return came_from
+
+target = (4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4)
+origin = (1, 1, 1, 2, 3, 2, 3, 2, 3, 2, 3, 1, 1, 1, 1)
+
+came_from = walk_elev (origin, target)
+
+t = target
+i = 1
+while t != origin:
+    print (t, i)
+    t = came_from [t]
+    i+=1
+print (origin)
+
+
+
+
+
