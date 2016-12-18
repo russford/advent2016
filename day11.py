@@ -12,6 +12,7 @@
 import itertools, copy, collections
 
 
+
 class State(object):
     def __init__(self):
         self.items = {"HM": 1, "LM": 1, "HG": 2, "LG": 3 }
@@ -43,6 +44,7 @@ class State(object):
     def check_fry(self):
         for i in range(4,0,-1):
             if (self.check_fry_set ([k for k,v in self.items.items() if v == i])):
+                print ("fried")
                 return 1
 
     def check_complete (self):
@@ -95,7 +97,33 @@ def run_states(state, depth):
             run_states(s, depth+1)
             seen_states.pop()
 
-s = State()
-print(run_states(s,1))
+# s = State()
+# print(run_states(s,1))
+#
+# print(seen_states)
 
-print(seen_states)
+def check_fried (state):
+    checks = [(state[i], state[i+1]) for i in range(1, len(state), 2) if state[i] != state[i+1]]
+    gens, chips = zip(*checks)
+    return any ([c in gens for c in chips])
+
+
+def fetch_states(state, came_from):
+    elevators = []
+    if state[0] < 4:
+        elevators += [1]
+    if state[0] > 1:
+        elevators += [-1]
+
+    floor_items = [i for i in range(1, len(state)) if state[i] == state[0]]
+
+    poss = list(itertools.combinations(floor_items, 1)) + list(itertools.combinations(floor_items, 2))
+    print (poss)
+
+    return poss
+
+
+states = [[2, 3, 2, 2, 1], [3, 2, 3, 3, 1], [4, 2, 2, 4, 1]]
+
+for s in states:
+    print (s, check_fried(s))
