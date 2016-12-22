@@ -12,56 +12,61 @@
 
 # move position X to position Y means that the letter which is at index X should be removed from the string, then inserted such that it ends up at index Y.
 
-import re
+import re, itertools, functools
 
-def instr_swap_position (s, data, rev):
+def instr_swap_position (data, s):
     a = int(min(data))
     b = int(max(data))
     return s[:a]+s[b]+s[a+1:b]+s[a]+s[b+1:]
 
-def instr_swap_letter (s, data, rev):
+def instr_swap_letter (data, s):
     a = s.index(data[0])
     b = s.index(data[1])
-    return instr_swap_position(s, (a,b), rev)
+    return instr_swap_position((a,b), s)
 
-def instr_rotate_num(s, data, rev):
+def instr_rotate_num(data, s):
     rot = int(data[1])
-    if data[0] == "left" and not rev:
+    if data[0] == "left":
         return s[rot:]+s[:rot]
     else:
         return s[-rot:]+s[:-rot]
 
-def instr_rotate_pos(s, data, rev):
+def instr_rotate_pos(data, s):
     i = s.index(data[0])
     if i >= 4: i += 1
-    return instr_rotate_num (s, ("right" if not rev else "left", (i+1)%len(s)), rev)
+    return instr_rotate_num (("right", (i+1)%len(s)), s)
 
-def instr_reverse (s, data, rev):
+def instr_reverse (data, s):
     return s[:int(data[0])]+s[int(data[0]):int(data[1])+1][::-1]+s[int(data[1])+1:]
 
-def instr_move_pos (s, data, rev):
-    if rev:
-        data = (data[1], data[0])
+def instr_move_pos (data, s):
     c = s[int(data[0])]
     s = s[:int(data[0])]+s[int(data[0])+1:]
     return s[:int(data[1])]+c+s[int(data[1]):]
 
-def build_func_list():
+def build_func_list(instr):
     instr_set = { "swap position (\w+) with position (\w+)": instr_swap_position,
                   "swap letter (\w+) with letter (\w+)": instr_swap_letter,
                   "rotate (\w+) (\w+) step": instr_rotate_num,
                   "rotate based on position of letter (\w+)": instr_rotate_pos,
                   "reverse positions (\w+) through (\w+)": instr_reverse,
                   "move position (\w+) to position (\w+)": instr_move_pos }
-    return [(re.compile(string), function) for string, function in instr_set.items()]
+    func_list = [(re.compile(string), function) for string, function in instr_set.items()]
+    funcs = []
+    for i in instr:
+        for regex, func in func_list:
+            m = regex.match(i)
+            if m:
+                funcs.append (functools.partial(func, m.groups()))
+    return funcs
 
-def process_instr (s, instr, func_list, rev):
+
+def process_instr (s, instr, func_list):
     for regex, func in func_list:
         m = regex.match (instr)
         if m:
-            return func(s, m.groups(), rev)
+            return func(s, m.groups())
     else:
-        print ("no match! ", instr)
         raise Exception ("no match on instruction {}".format(instr))
 
 
@@ -76,6 +81,11 @@ def process_instr (s, instr, func_list, rev):
 # plus an additional time because the index was at least 4, for a total of 6 right rotations: decab.
 
 
+def process_deck (s, deck):
+    for d in deck:
+        s = d(s)
+    return s
+
 test_input = ["swap position 4 with position 0", "swap letter d with letter b",
               "reverse positions 0 through 4", "rotate left 1 step",
               "move position 1 to position 4", "move position 3 to position 0",
@@ -84,14 +94,13 @@ test_input = ["swap position 4 with position 0", "swap letter d with letter b",
 with open("day21.txt", "r") as f:
     file_input = f.readlines()
 
-s = "abcdefgh"
-deck = build_func_list()
-for i in file_input:
-    s = process_instr(s, i, deck, False)
-print(s)
+deck = build_func_list(file_input)
 
-s = "decab"
-for i in reversed(test_input):
-    s2 = process_instr(s, i, deck, True)
-    print (s, s2, i)
-print (s)
+s = "abcdefgh"
+print(process_deck(s, deck))
+
+s = "fbgdceah"
+
+for p in itertools.permutations(s):
+    if process_deck(''.join(p), deck) == s:
+        print (''.join(p))
