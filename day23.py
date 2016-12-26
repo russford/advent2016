@@ -40,6 +40,17 @@ def val(v, registers):
 
 
 def exec (code, code_ptr, registers):
+    if code_ptr == 2:
+        registers["a"] = registers["a"] * registers["b"]
+        registers["b"] -= 1
+        registers["c"] = 2 * registers["b"]
+        registers["d"] = 0
+        return 14
+
+    if code_ptr == 20:
+        registers["a"] += 95*96
+        return 6
+
     instr = code[code_ptr].split()
     if instr[0] == "cpy":
         if instr[2] in registers:
@@ -58,8 +69,10 @@ def exec (code, code_ptr, registers):
         jmp = val(instr[1], registers)
         if code_ptr+jmp < len(code):
             new_ins = toggle(code[code_ptr+jmp])
-            print ("toggled {} to {}", ' '.join(instr), new_ins)
+            print ("toggled {}:{} to {}".format(code_ptr+jmp, code[code_ptr+jmp], new_ins))
             code[code_ptr+jmp] = new_ins
+            if code_ptr+jmp == 18:
+                print ('\n'.join(code[16:]))
     return 0
 
 def run_code(code):
@@ -68,10 +81,12 @@ def run_code(code):
     print(code)
     i=0
     while code_ptr < len(code):
-        # print("{}: {} | {}".format(code_ptr, code[code_ptr], sorted(registers.items())))
         jmp = exec(code, code_ptr, registers)
+        if code_ptr < 2 or 21 > code_ptr > 15 or code_ptr == 10 or code_ptr > 23:
+            print("{:>3}: {:<8} | {}".format(code_ptr, code[code_ptr], '   '.join(["{}:{:>5}".format(k,v) for k,v in sorted(registers.items())])))
         if jmp == 0: jmp = 1
         code_ptr += jmp
+        i += 1
     print (sorted(registers.items()))
 
 with open("day23.txt", "r") as f:
