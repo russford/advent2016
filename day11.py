@@ -13,6 +13,7 @@ import itertools, heapq
 from functools import reduce
 
 
+
 def check_fried (state):
     checks = [(state[i], state[i+1]) for i in range(1, len(state), 2)]
     if checks:
@@ -74,6 +75,13 @@ def walk_elev (state, target, cost):
             break
 
     return came_from
+
+
+
+
+
+
+
 
 target = (4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4)
 origin = (1, 1, 1, 2, 3, 2, 3, 2, 3, 2, 3, 1, 1, 1, 1)
